@@ -12,11 +12,15 @@ const ANIDB_MAPPING_URL = "https://raw.githubusercontent.com/meisnate12/Plex-Met
 const settings = {
         'host': 'localhost',
 	'port': 9001,
+	'log_level': 'info',
         'anilist_token': null,
         'plex_account': null,
 	'plex_library': ['Anime'],
 	'mapping': "",
-	'log_level': 'info',
+	'mattermost_webhook': null,
+	'mattermost_account': null,
+	'mattermost_icon_rate': null,
+	'mattermost_icon_fail': null,
 };
 
 const logger = winston.createLogger({
@@ -143,9 +147,15 @@ async function handleScrobble(plex, settings) {
 				// apply update
 				const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
 				if (result.status == "COMPLETED") {
-					// TODO: mm webhook for rate URL
+					mmRateSeries(settings, plex.Metadata.grandparentTitle, entry.media.siteUrl);
 				} else if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
-					// TODO: mm webhook for failed update
+					mmFailure(
+						settings,
+						plex.Metadata.grandparentTitle,
+						plex.Metadata.parentIndex,
+						plex.Metadata.index,
+						`Failed to update progress, API returned unexpected result: ${JSON.stringify(result)}`,
+					);
 					logger.error(`[${reqid}] API call to anilist returned unexpected result: ${JSON.stringify(result)}`);
 					return;
 				}
@@ -167,13 +177,57 @@ async function handleScrobble(plex, settings) {
 				// apply update
 				const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
 				if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
-					// TODO: mm webhook for failed update
+					mmFailure(
+						settings,
+						plex.Metadata.grandparentTitle,
+						plex.Metadata.parentIndex,
+						plex.Metadata.index,
+						`Failed to update progress, API returned unexpected result: ${JSON.stringify(result)}`,
+					);
 					logger.error(`[${reqid}] API call to anilist returned unexpected result: ${JSON.stringify(result)}`);
 					return;
 				}
 			}
 		}
 	}
+}
+
+async function mmRateSeries(settings, title, url) {
+	if (!settings.mattermost_webhook) return;
+	if (!settings.mattermost_account) return;
+
+	await axios.post(settings.mattermost_webhook, {
+		"channel": settings.mattermost_account,
+		"attachments": [
+			{
+				"color": "#00cc00",
+				"author_name": "Scrobbler",
+				"author_icon": settings.mattermost_icon_rate,
+				"title": title,
+				"text": `This show is now marked as completed, don't forget to [rate](${url}) it!`,
+			}
+		],
+		"fallback": `**${title}** completed, don't forget to [this](${url}) it!`,
+	});
+}
+
+async function mmFailure(settings, title, season, episode, reason) {
+	if (!settings.mattermost_webhook) return;
+	if (!settings.mattermost_account) return;
+
+	axios.post(settings.mattermost_webhook, {
+		"channel": settings.mattermost_account,
+		"attachments": [
+			{
+				"color": "#dc143c",
+				"author_name": "Scrobbler",
+				"author_icon": settings.mattermost_icon_fail,
+				"title": `${title} - S${season}E${episode}`,
+				"text": reason,
+			}
+		],
+		"fallback": `**${title} - S${season}E${episode}** - *${episode}*: ${reason}`,
+	});
 }
 
 async function start() {
