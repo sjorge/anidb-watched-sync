@@ -1,0 +1,10 @@
+{
+	"host": "localhost",
+	"port": 4040,
+	"plex_account": "<plex account name>",
+	"anilist_token": "<anilist token>",
+	"mapping": {
+		"2171": 2955
+	},
+	"log_level": "info"
+}

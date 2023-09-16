@@ -16,7 +16,10 @@ Once it receives such event:
 git clone https://github.com/sjorge/anilist-plex-scrobbler.git /opt/anilist-plex-scrobbler
 cd /opt/anilist-plex-scrobbler
 npm install
-npm start -- --port 9001 --plex_account <account> --anilist_token <token>
+cp config.json.example config.json
+sudo cp systemd.service /etc/systemd/system/anilist-plex-scrobbler.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now anilist-plex-scrobbler.service
 ```
 
 ### TODO
@@ -24,4 +27,4 @@ npm start -- --port 9001 --plex_account <account> --anilist_token <token>
 - [x] re-introduce mattermost notification on failures
 - [x] re-introduce mattermost notification on complete so you can rate the show 
 - [ ] better config system
-- [ ] add a systemd unit
+- [x] add a systemd unit

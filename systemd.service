@@ -1,0 +1,15 @@
+[Unit]
+Description=anilist-plex-scrobbler
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/npm start -- --config config.json
+WorkingDirectory=/opt/anilist-plex-scrobbler
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+DynamicUser=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
