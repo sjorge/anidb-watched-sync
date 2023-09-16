@@ -1,0 +1,11 @@
+---
+host: localhost
+port: 4040
+plex_account: <plex account name>
+plex_library:
+  - Anime
+  - Anime4k
+anilist_token: <anilist token>
+mapping:
+  2171: 2955
+log_level: info

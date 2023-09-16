@@ -3,7 +3,7 @@ Description=anilist-plex-scrobbler
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/npm start -- --config config.json
+ExecStart=/usr/bin/npm start -- --config config.yaml
 WorkingDirectory=/opt/anilist-plex-scrobbler
 StandardOutput=inherit
 StandardError=inherit

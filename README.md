@@ -16,7 +16,7 @@ Once it receives such event:
 git clone https://github.com/sjorge/anilist-plex-scrobbler.git /opt/anilist-plex-scrobbler
 cd /opt/anilist-plex-scrobbler
 npm install
-cp config.json.example config.json
+cp config.yaml.example config.yaml
 sudo cp systemd.service /etc/systemd/system/anilist-plex-scrobbler.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now anilist-plex-scrobbler.service

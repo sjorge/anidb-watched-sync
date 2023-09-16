@@ -7,6 +7,7 @@ const multer = require('multer');
 const crc32c = require('fast-crc32c');
 const axios = require('axios');
 const anilist = require('anilist-node');
+const YAML = require('yaml-node12');
 
 const ANIDB_MAPPING_URL = "https://raw.githubusercontent.com/meisnate12/Plex-Meta-Manager-Anime-IDs/master/pmm_anime_ids.json";
 const settings = {
@@ -17,10 +18,12 @@ const settings = {
         'plex_account': null,
 	'plex_library': ['Anime'],
 	'mapping': {},
-	'mattermost_webhook': null,
-	'mattermost_account': null,
-	'mattermost_icon_rate': null,
-	'mattermost_icon_fail': null,
+	'mattermost': {
+		'webhook': null,
+		'channel': null,
+		'icon_rate': null,
+		'icon_fail': null,
+	},
 };
 
 const logger = winston.createLogger({
@@ -198,16 +201,16 @@ async function handleScrobble(plex, settings) {
 }
 
 async function mmRateSeries(settings, title, url) {
-	if (!settings.mattermost_webhook) return;
-	if (!settings.mattermost_account) return;
+	if (!settings.mattermost.webhook) return;
+	if (!settings.mattermost.channel) return;
 
-	await axios.post(settings.mattermost_webhook, {
-		"channel": settings.mattermost_account,
+	await axios.post(settings.mattermost.webhook, {
+		"channel": settings.mattermost.channel,
 		"attachments": [
 			{
 				"color": "#00cc00",
 				"author_name": "Scrobbler",
-				"author_icon": settings.mattermost_icon_rate,
+				"author_icon": settings.mattermost.icon_rate,
 				"title": title,
 				"text": `This show is now marked as completed, don't forget to [rate](${url}) it!`,
 			}
@@ -217,16 +220,16 @@ async function mmRateSeries(settings, title, url) {
 }
 
 async function mmFailure(settings, title, season, episode, reason) {
-	if (!settings.mattermost_webhook) return;
-	if (!settings.mattermost_account) return;
+	if (!settings.mattermost.webhook) return;
+	if (!settings.mattermost.channel) return;
 
-	axios.post(settings.mattermost_webhook, {
-		"channel": settings.mattermost_account,
+	axios.post(settings.mattermost.webhook, {
+		"channel": settings.mattermost.channel,
 		"attachments": [
 			{
 				"color": "#dc143c",
 				"author_name": "Scrobbler",
-				"author_icon": settings.mattermost_icon_fail,
+				"author_icon": settings.mattermost.icon_fail,
 				"title": `${title} - S${season}E${episode}`,
 				"text": reason,
 			}
@@ -242,9 +245,7 @@ async function start() {
 	if (args.config) {
 		try {
 			const data = fs.readFileSync(args.config, 'utf8');
-			Object.assign(settings, JSON.parse(data));
-
-			logger.debug(`Using settings: ${JSON.stringify(settings)}`);
+			Object.assign(settings, YAML.parse(data));
 		} catch (err) {
 			logger.error(`Unable to load config file ${args.config}, does not exist!`);
 			return;
@@ -255,14 +256,16 @@ async function start() {
 	}
 
 	logger.transports[0].level = settings.log_level;
+	logger.debug(`Using settings: ${JSON.stringify(settings)}`);
+
 	if (settings.plex_account && settings.anilist_token) {
 		app.listen(settings.port, settings.host, () => logger.info(`Listening on ${settings.host}:${settings.port}`));
 	} else {
 		if (!settings.plex_account) {
-			logger.error('Missing plex_account, please specify by passing "--plex_account <name>"');
+			logger.error('Missing plex_account in configuration file"');
 		}
 		if (!settings.anilist_token) {
-			logger.error('Missing anilist_token, please specify by passing "--anilist_token <name>" (enable debug logging for more info)');
+			logger.error('Missing anilist_token in configuration files (enable debug logging for more info)');
 			logger.debug('You can obtain a token by visiting https://anilist.co/settings/developer');
 			logger.debug('Click "Create New Client", take note of the client id and specify');
 			logger.debug('https://anilist.co/api/v2/oauth/pin as the redirect URL.');
