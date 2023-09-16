@@ -21,10 +21,3 @@ sudo cp systemd.service /etc/systemd/system/anilist-plex-scrobbler.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now anilist-plex-scrobbler.service
 ```
-
-### TODO
-- [x] cleanup Anilist API calls
-- [x] re-introduce mattermost notification on failures
-- [x] re-introduce mattermost notification on complete so you can rate the show 
-- [ ] better config system
-- [x] add a systemd unit
