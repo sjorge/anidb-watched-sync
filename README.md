@@ -20,7 +20,8 @@ npm start -- --port 9001 --plex_account <account> --anilist_token <token>
 ```
 
 ### TODO
-- [ ] cleanup Anilist API calls
+- [x] cleanup Anilist API calls
 - [ ] re-introduce mattermost notification on failures
 - [ ] re-introduce mattermost notification on complete so you can rate the show 
+- [ ] better config system
 - [ ] add a systemd unit

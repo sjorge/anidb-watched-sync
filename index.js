@@ -16,7 +16,7 @@ const settings = {
         'plex_account': null,
 	'plex_library': ['Anime'],
 	'mapping': "",
-	'log_level': 'debug',
+	'log_level': 'info',
 };
 
 const logger = winston.createLogger({
@@ -65,8 +65,9 @@ async function handleScrobble(plex, settings) {
 	const reqid = crc32c.calculate(JSON.stringify(plex) + Date.now()).toString("16");
 
 	// filter unwanted events
-	logger.info(`[${reqid}] Received ${plex.event} for account ${plex.Account.title} ...`);
-	if (plex.event != "media.play") { // FIXME: switch to media.scrobble
+	const recvlog = (plex.event == "media.scrobble") ? logger.info : logger.debug;
+	recvlog(`[${reqid}] Received ${plex.event} for account ${plex.Account.title} ...`);
+	if (plex.event != "media.scrobble") {
 		logger.debug(`[${reqid}] Ignoring event, type ${plex.event} is not media.scrobble.`);
 		return;
 	} else if (plex.Account.title != settings.plex_account) {
@@ -113,40 +114,66 @@ async function handleScrobble(plex, settings) {
 		`${plex.Metadata.title}`
 	);
 
-	// look for media with matchign anilist id in the watching list
+	// look for media with matching anilist id
 	const Anilist = new anilist(settings.anilist_token);
-	const anilist_list = await Anilist.lists.anime("username"); // FIXME: find self ?
+	const anilist_profile = await Anilist.user.getAuthorized();
+	const anilist_list = await Anilist.lists.anime(anilist_profile.id);
 	for (const list of anilist_list) {
-		// NOTE: to scrobble the anime NEEDS to be in the Watching status
-		if (list.name != "Watching") continue;
-		for (const entry of list.entries) {
-			// NOTE: find the correct entry based on anilist id
-			if (entry.media.id != anilist_id) continue;
+		// only increase progress if in Watching list
+		if (list.name == 'Watching') {
+			for (const entry of list.entries) {
+				if (entry.media.id != anilist_id) continue;
 
-			// NOTE: check if plex.Metadata.index >= entry.progress +1
-			if (plex.Metadata.index <= entry.progress) { // FIXME write statement more cleanly
-				// TODO: log error here
-				return;
-			// NOTE: check if plex.Metadata.index is not higher than maximum
-			} else if (plex.Metadata.index > entry.media.episodes) {
-				// TODO: log error here
-				return;
+				// sanity check before advancing progress
+				if (entry.progress >= plex.Metadata.index) {
+					logger.warn(`[${reqid}] skipping update, anilist progress > current episode.`);
+					return;
+				} else if (entry.media.episodes < plex.Metadata.index) {
+					logger.warn(`[${reqid}] skipping update, current episode is > max episodes.`);
+					return;
+				}
+
+				// create updated entry
+				const updatedEntry = { "progress": plex.Metadata.index };
+				if (updatedEntry.progress == entry.media.episodes) {
+					// mark as completed if episode is final episode
+					updatedEntry.status = "COMPLETED";
+				}
+
+				// apply update
+				const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
+				if (result.status == "COMPLETED") {
+					// TODO: mm webhook for rate URL
+				} else if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
+					// TODO: mm webhook for failed update
+					logger.error(`[${reqid}] API call to anilist returned unexpected result: ${JSON.stringify(result)}`);
+					return;
+				}
 			}
 
-			const updatedEntry = { "progress": plex.Metadata.index };
-			if (updatedEntry.progress == entry.media.episodes) {
-				updatedEntry.status = "COMPLETED";
-			}
-			const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
-			if (result.status == "COMPLETED") {
-				// TODO: rate series ???
-			} else if (result.status != "CURRENT") {
-				// FIXME: can we even get here?
-				// we are supose to handle a failure to update here
+		// allow Planning -> Watching if episode 1 is played
+		} else if (list.name == 'Planning') {
+			for (const entry of list.entries) {
+				if (entry.media.id != anilist_id) continue;
+
+				if (plex.Metadata.index != 1) {
+					logger.warn(`[${reqid}] skipping update, anime on "Planning" list but this is not the first episode.`);
+					return;
+				}
+
+				// create updated entry
+				const updatedEntry = { "progress": plex.Metadata.index, "status": "CURRENT" };
+
+				// apply update
+				const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
+				if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
+					// TODO: mm webhook for failed update
+					logger.error(`[${reqid}] API call to anilist returned unexpected result: ${JSON.stringify(result)}`);
+					return;
+				}
 			}
 		}
 	}
-	*/
 }
 
 async function start() {
