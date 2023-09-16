@@ -243,6 +243,8 @@ async function start() {
 		try {
 			const data = fs.readFileSync(args.config, 'utf8');
 			Object.assign(settings, JSON.parse(data));
+
+			logger.debug(`Using settings: ${JSON.stringify(settings)}`);
 		} catch (err) {
 			logger.error(`Unable to load config file ${args.config}, does not exist!`);
 			return;
