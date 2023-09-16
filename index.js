@@ -16,7 +16,7 @@ const settings = {
         'anilist_token': null,
         'plex_account': null,
 	'plex_library': ['Anime'],
-	'mapping': "",
+	'mapping': {},
 	'mattermost_webhook': null,
 	'mattermost_account': null,
 	'mattermost_icon_rate': null,
@@ -239,21 +239,18 @@ async function start() {
 	logger.info('Starting Anilist Plex Webhook Scrobbler ...');
 
 	const args = minimist(process.argv.slice(2))
-	Object.assign(settings, args);
-	// NOTE: allow passing --plex_library multiple times
-	//       but when passed once we end up a string, force
-	//       to a list in that case.
-	if (typeof settings.plex_library == 'string') {
-		settings.plex_library = [settings.plex_library];
+	if (args.config) {
+		try {
+			const data = fs.readFileSync(args.config, 'utf8');
+			Object.assign(settings, JSON.parse(data));
+		} catch (err) {
+			logger.error(`Unable to load config file ${args.config}, does not exist!`);
+			return;
+		}
+	} else {
+		logger.error('Unable to load config file as no "--config <path>" argument was specified.');
+		return;
 	}
-	// NOTE: --mapping is passed as 'anidbid1:anilistid1,anidbid2:anilistid2'
-	const mapping = {};
-	for (let entry of settings.mapping.split(',')) {
-		entry = entry.split(':');
-		if (entry.length != 2) continue;
-		mapping[entry[0]] = parseInt(entry[1]);
-	}
-	settings.mapping = mapping;
 
 	logger.transports[0].level = settings.log_level;
 	if (settings.plex_account && settings.anilist_token) {
