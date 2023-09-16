@@ -148,6 +148,7 @@ async function handleScrobble(plex, settings) {
 				const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
 				if (result.status == "COMPLETED") {
 					mmRateSeries(settings, plex.Metadata.grandparentTitle, entry.media.siteUrl);
+					logger.info(`[${reqid}] marked as ${result.status}.`);
 				} else if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
 					mmFailure(
 						settings,
@@ -158,6 +159,8 @@ async function handleScrobble(plex, settings) {
 					);
 					logger.error(`[${reqid}] API call to anilist returned unexpected result: ${JSON.stringify(result)}`);
 					return;
+				} else {
+					logger.info(`[${reqid}] updated progress to ${result.progress}.`);
 				}
 			}
 
@@ -186,6 +189,8 @@ async function handleScrobble(plex, settings) {
 					);
 					logger.error(`[${reqid}] API call to anilist returned unexpected result: ${JSON.stringify(result)}`);
 					return;
+				} else {
+					logger.info(`[${reqid}] updated progess to ${result.progress} and status to ${result.status}.`);
 				}
 			}
 		}
