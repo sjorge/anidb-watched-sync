@@ -1,5 +1,8 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const stream = require('stream');
+const { promisify } = require('util');
 const minimist = require('minimist');
 const winston = require('winston');
 const express = require('express');
@@ -10,6 +13,8 @@ const anilist = require('anilist-node');
 const YAML = require('yaml-node12');
 
 const ANIDB_MAPPING_URL = "https://raw.githubusercontent.com/meisnate12/Plex-Meta-Manager-Anime-IDs/master/pmm_anime_ids.json";
+const ANIDB_MAPPING_PATH = "/var/tmp/anidb.map";
+
 const settings = {
         'host': 'localhost',
 	'port': 9001,
@@ -67,6 +72,25 @@ app.post('/', upload.single('thumb'), (req, res, next) => {
 	res.sendStatus(200);
 });
 
+async function updateMapping() {
+	if (fs.existsSync(ANIDB_MAPPING_PATH)) {
+		const stats = fs.statSync(ANIDB_MAPPING_PATH);
+		if (((new Date().getTime() - stats.mtime) / 1000 / 3600 / 24) < 1) {
+			logger.debug('Mapping is up to date.');
+			return true;
+		}
+	}
+
+	logger.debug("Mapping is out of date, updating ...");
+	const mapping = await axios.get(ANIDB_MAPPING_URL, {responseType: 'stream'});
+	const writer = fs.createWriteStream(ANIDB_MAPPING_PATH);
+	const finished = promisify(stream.finished);
+	mapping.data.pipe(writer);
+	await finished(writer);
+	fs.chmodSync(ANIDB_MAPPING_PATH, 0666);
+	return true;
+}
+
 async function handleScrobble(plex, settings) {
 	const anidb_re = /^com.plexapp.agents.hama:\/\/anidb-(\d+)(?:\/\d+\/\d+)?\?lang=(\w+)$/i;
 	const reqid = crc32c.calculate(JSON.stringify(plex) + Date.now()).toString("16");
@@ -101,7 +125,8 @@ async function handleScrobble(plex, settings) {
 	}
 
 	// fetch anidb -> anilist mapping
-	const mapping = await axios.get(ANIDB_MAPPING_URL);
+	await updateMapping();
+	const anilist_mapping = JSON.parse(fs.readFileSync(ANIDB_MAPPING_PATH));
 
 	// extract anidb id
 	const anidb_matches = anidb_re.exec(plex.Metadata.guid);
@@ -109,8 +134,8 @@ async function handleScrobble(plex, settings) {
 		logger.error(`[${reqid}] Unable to extract anidb id!`);
 	}
 	const anidb_id = anidb_matches[1];
-	const anilist_id = (anidb_id in settings.mapping) ? settings.mapping[anidb_id] : mapping.data[anidb_id].anilist_id;
-	if (!anilist_id) {
+	const anilist_id = (anidb_id in settings.mapping) ? settings.mapping[anidb_id] : anilist_mapping[anidb_id].anilist_id;
+	if (!anilist_id || anilist_id < 1) {
 		logger.error(`[${reqid}] Unable to map extracted anidb id ${anidb_id} to an anilist id!`);
 		return;
 	}
