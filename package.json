@@ -1,11 +1,11 @@
 {
-  "name": "anilist-scrobler-webhook",
+  "name": "plex-anilist-scrobler-webhook",
   "version": "1.0.0",
   "description": "Scrobble anime via PlexMedieServer webhook support.",
   "main": "index.js",
   "license": "MIT",
   "bin": {
-    "anilist-scrobbler-webhook": "cli.js"
+    "plex-anilist-scrobbler-webhook": "cli.js"
   },
   "scripts": {
     "start": "node index.js"

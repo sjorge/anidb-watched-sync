@@ -1,10 +1,10 @@
 [Unit]
-Description=anilist-plex-scrobbler
+Description=Plex Anilist Scrobbler
 After=network.target
 
 [Service]
 ExecStart=/usr/bin/npm start -- --config config.yaml
-WorkingDirectory=/opt/anilist-plex-scrobbler
+WorkingDirectory=/opt/plex-anilist-scrobbler
 StandardOutput=inherit
 StandardError=inherit
 Restart=always

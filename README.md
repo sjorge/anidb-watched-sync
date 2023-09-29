@@ -1,4 +1,4 @@
-## Anilist Plex Scrobbler
+## Plex Anilist Scrobbler
 ### What is it?
 A simple nodejs app that listens for webhook calls from Plex Media Server, more specifically the `media.scrobble` event.
 
@@ -14,10 +14,10 @@ Once it receives such event:
 ### Installation
 ```bash
 git clone https://github.com/sjorge/anilist-plex-scrobbler.git /opt/anilist-plex-scrobbler
-cd /opt/anilist-plex-scrobbler
+cd /opt/plex-anilist-scrobbler
 npm install
 cp config.yaml.example config.yaml
-sudo cp systemd.service /etc/systemd/system/anilist-plex-scrobbler.service
+sudo cp systemd.service /etc/systemd/system/plex-anilist-scrobbler.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now anilist-plex-scrobbler.service
+sudo systemctl enable --now plex-anilist-scrobbler.service
 ```
