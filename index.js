@@ -22,7 +22,6 @@ const settings = {
         'anilist_token': null,
         'plex_account': null,
 	'plex_library': ['Anime'],
-	'mapping': {},
 	'mattermost': {
 		'webhook': null,
 		'channel': null,
@@ -127,6 +126,13 @@ async function handleScrobble(plex, settings) {
 	// fetch anidb -> anilist mapping
 	await updateMapping();
 	const anilist_mapping = JSON.parse(fs.readFileSync(ANIDB_MAPPING_PATH));
+	let custom_mapping = {};
+	try {
+		const data = fs.readFileSync('mapping.yaml', 'utf8');
+		custom_mapping = YAML.parse(data);
+	} catch (err) {
+		logger.debug('Unable to load custom mapping file.');
+	}
 
 	// extract anidb id
 	const anidb_matches = anidb_re.exec(plex.Metadata.guid);
@@ -134,7 +140,7 @@ async function handleScrobble(plex, settings) {
 		logger.error(`[${reqid}] Unable to extract anidb id!`);
 	}
 	const anidb_id = anidb_matches[1];
-	const anilist_id = (anidb_id in settings.mapping) ? settings.mapping[anidb_id] : anilist_mapping[anidb_id].anilist_id;
+	const anilist_id = (anidb_id in custom_mapping) ? custom_mapping[anidb_id] : anilist_mapping[anidb_id].anilist_id;
 	if (!anilist_id || anilist_id < 1) {
 		logger.error(`[${reqid}] Unable to map extracted anidb id ${anidb_id} to an anilist id!`);
 		return;
