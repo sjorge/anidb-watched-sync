@@ -210,10 +210,17 @@ async function handleScrobble(plex, settings) {
 
 				// create updated entry
 				const updatedEntry = { "progress": plex.Metadata.index, "status": "CURRENT" };
+				if (updatedEntry.progress == entry.media.episodes) {
+					// mark as completed if episode is final episode
+					updatedEntry.status = "COMPLETED";
+				}
 
 				// apply update
 				const result = await Anilist.lists.updateEntry(entry.id, updatedEntry);
-				if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
+				if (result.status == "COMPLETED") {
+					mmRateSeries(settings, plex.Metadata.grandparentTitle, entry.media.siteUrl);
+					logger.info(`[${reqid}] marked as ${result.status}.`);
+				} else if ((result.status != "CURRENT") || (result.progress != plex.Metadata.index)) {
 					mmFailure(
 						settings,
 						plex.Metadata.grandparentTitle,
