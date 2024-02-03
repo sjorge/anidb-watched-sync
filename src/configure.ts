@@ -62,18 +62,6 @@ function writeConfig(config: Config): boolean {
     return true;
 }
 
-export function validateConfig(config: Config): boolean {
-    if (config.jellyfin.url == undefined) return false;
-    if (config.jellyfin.apiKey == undefined) return false;
-    if (config.jellyfin.user == undefined) return false;
-    if (config.jellyfin.library == undefined) return false;
-    if (config.plex.url == undefined) return false;
-    if (config.plex.token == undefined) return false;
-    if (config.plex.user == undefined) return false;
-    if (config.plex.library == undefined) return false;
-    return true;
-}
-
 export async function configureAction(opts: OptionValues): Promise<void> {
     const config: Config = readConfig();
     if (opts.webhookBind) config.webhook.bind = `${opts.webhookBind}`;
@@ -90,9 +78,6 @@ export async function configureAction(opts: OptionValues): Promise<void> {
     if(!writeConfig(config)) {
         console.error(`Failed to update ${configFile}!`);
         process.exitCode = 1;
-    }
-    if(!validateConfig(config)) {
-        console.warn(`Configuration is not valid! Please specify at least plex url, token, user, and library and jellyfin url, api-key, user, and library.`);
     }
 }
 
