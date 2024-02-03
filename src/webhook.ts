@@ -1,7 +1,9 @@
 import process from 'node:process';
 import { Config, readConfig, validateConfig } from './configure'
+import { webhookPlex } from './webhookPlex';
+import { webhookJellyfin } from './webhookJellyfin';
 
-function log(msg: string, type: "error" | "warn" | "step" | "done" | "info" = "info"): void {
+export function log(msg: string, type: "error" | "warn" | "step" | "done" | "info" = "info"): void {
     const blank: number = process.stdout.columns ? (process.stdout.columns) : 0;
     switch(type) {
         case "error":
@@ -41,10 +43,10 @@ export async function webhookAction(): Promise<void> {
         if (req.method == "POST") {
             switch(url.pathname) {
                 case "/plex":
-                    return new Response("TODO handle /plex\n");
+                    return webhookPlex(req);
                     break;
                 case "/jellyfin":
-                    return new Response("TODO handle /jellyfin\n");
+                    return webhookJellyfin(req);
                     break;
             }
         }
