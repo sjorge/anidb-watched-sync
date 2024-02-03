@@ -18,6 +18,7 @@
   "devDependencies": {
     "@commander-js/extra-typings": "^11.1.0",
     "@types/braces": "^3.0.4",
+    "@types/bun": "^1.0.4",
     "@types/node": "^20.10.5",
     "@typescript-eslint/eslint-plugin": "^6.16.0",
     "@typescript-eslint/parser": "^6.16.0",

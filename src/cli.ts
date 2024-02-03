@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { program } from '@commander-js/extra-typings';
 import { configureAction } from './configure';
-//import { webhookAction } from './webhook';
+import { webhookAction } from './webhook';
 
 program
     .name("anidb-watched-sync")
@@ -24,12 +24,10 @@ program
     .option('--plex-user <username>', 'plex username')
     .action(configureAction);
 
-/*
 program
     .command('webhook')
     .description('Start the webhook server')
     .action(webhookAction);
-*/
 
 program.parse(process.argv);
 
