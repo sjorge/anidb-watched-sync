@@ -1,0 +1,38 @@
+{
+  "name": "anidb-watched-sync",
+  "version": "1.0.0",
+  "main": "dist/cli.js",
+  "scripts": {
+    "start": "bun tsc && bun dist/cli.js",
+    "build": "bun tsc",
+    "rebuild": "bun tsc --build --clean",
+    "lint": "bun --bun eslint --ext .ts src",
+    "compile": "bun build src/cli.ts --compile --outfile bin/aws",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {},
+  "keywords": [],
+  "author": "sjorge",
+  "license": "MIT",
+  "description": "Webhook for syncronizing plex and jellyfin watch status for anidb tagged episodes.",
+  "devDependencies": {
+    "@commander-js/extra-typings": "^11.1.0",
+    "@types/braces": "^3.0.4",
+    "@types/node": "^20.10.5",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "axios": "^1.6.3",
+    "braces": "^3.0.2",
+    "commander": "^11.1.0",
+    "deepmerge-ts": "^5.1.0",
+    "plex-sdk": "^3.0.4"
+  },
+  "overrides": {
+    "whatwg-url": "13.0.0"
+  }
+}
