@@ -1,4 +1,5 @@
 import { Config } from './configure'
+import { ScrobbleResult } from './scrobbler';
 import { JellyfinMiniApi, JellyfinProviderSeries, JellyfinSeriesEpisodes } from './jellyfin';
 
 export class ScrobblerJellyfin {
@@ -37,9 +38,13 @@ export class ScrobblerJellyfin {
         }
     }
 
-    public async scrobble(aid: number, episode: number, season: number = 1): Promise<boolean> {
+    public async scrobble(aid: number, episode: number, season: number = 1): Promise<ScrobbleResult> {
         if ((this.api == undefined) || (this.libraryId == undefined) || (this.userId == undefined)) {
-            throw new Error("Scrobbler not initialized!!");
+            return {
+                success: false,
+                log_lvl: "error",
+                log_msg: "not initialized!",
+            } as ScrobbleResult;
         }
 
         const series: JellyfinProviderSeries = await this.api.getSeriesWithProvider(this.libraryId, this.userId, "anidb");
@@ -55,15 +60,27 @@ export class ScrobblerJellyfin {
                     if (targetEpisode.episode != episode) continue;
                     if (targetEpisode.watched) continue;
                     if (!await this.api.markWatched(targetEpisode.id, this.userId)) {
-                        throw new Error("Failed to mark as watched via API!");
+                        return {
+                            success: false,
+                            log_lvl: "error",
+                            log_msg: "failed to mark as watched!",
+                        } as ScrobbleResult;
                     }
                 }
             }
         } else {
-            return false;
+            return {
+                success: false,
+                log_lvl: "warn",
+                log_msg: "could not find series with anidb id ${aid} on server,",
+            } as ScrobbleResult;
         }
 
-        return true;
+        return {
+            success: true,
+            log_lvl: "info",
+            log_msg: "successful.",
+        } as ScrobbleResult;
     }
 }
 

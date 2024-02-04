@@ -1,6 +1,6 @@
 import { log } from './logger';
 import { Config } from './configure';
-import { Scrobblers } from './scrobbler';
+import { Scrobblers, ScrobbleResult } from './scrobbler';
 import { JellyfinProviderSeries, JellyfinSeriesEpisodes } from './jellyfin';
 
 type PlexPayload = {
@@ -90,22 +90,14 @@ export async function webhookPlex(config: Config, scrobbler: Scrobblers, req: Re
                     if ((media_season >= 0) && (media_episode >= 0)) {
                         if (scrobbler.jellyfin?.scrobble !== undefined) {
                             scrobbler.jellyfin.scrobble(anidb_id, media_episode, media_season)
-                                .then((success: boolean) => {
-                                    const log_lvl = (success ? "info" : "warn");
-                                    const log_msg = (success ? "successful" : "unable to find series");
-                                    log(`[${reqid}] plex: scrobbled to Jellyfin: ${log_msg}`, log_lvl);
-                                }).catch((err: Error) => {
-                                    log(`[${reqid}] plex: scrobbled to Jellyfin: ${err.message}`, "error");
+                                .then((result: ScrobbleResult) => {
+                                    log(`[${reqid}] plex: scrobbled to Jellyfin: ${result.log_msg}`, result.log_lvl);
                                 });
                         }
                         if (scrobbler.anilist?.scrobble !== undefined) {
                             scrobbler.anilist.scrobble(anidb_id, media_episode, media_season)
-                                .then((success: boolean) => {
-                                    const log_lvl = (success ? "info" : "warn");
-                                    const log_msg = (success ? "successful" : "unable to find series");
-                                    log(`[${reqid}] plex: scrobbled to Anilist: ${log_msg}`, log_lvl);
-                                }).catch((err: Error) => {
-                                    log(`[${reqid}] plex: scrobbled to Anilist: ${err.message}`, "error");
+                                .then((result: ScrobbleResult) => {
+                                    log(`[${reqid}] plex: scrobbled to Anilist: ${result.log_msg}`, result.log_lvl);
                                 });
                         }
                     } else {
