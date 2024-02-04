@@ -7,7 +7,7 @@
     "build": "bun tsc",
     "rebuild": "bun tsc --build --clean",
     "lint": "bun --bun eslint --ext .ts src",
-    "compile": "bun build src/cli.ts --compile --outfile bin/aws",
+    "compile": "mkdir -p bin/ ; bun build src/cli.ts --compile --outfile bin/aws",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {},
