@@ -19,13 +19,13 @@ export type Config = {
         url?: string;
         apiKey?: string;
         caFile?: string;
-        library?: string;
+        library: string[];
         user?: string;
     };
     plex: {
         url?: string;
         token?: string;
-        library?: string;
+        library: string[];
         user?: string;
     };
 };
@@ -39,8 +39,12 @@ export function readConfig(): Config {
             port: 4091,
         },
         anilist: {},
-        jellyfin: {},
-        plex: {},
+        jellyfin: {
+            library: [],
+        },
+        plex: {
+            library: [],
+        },
     };
 
     if(fs.existsSync(configFile) && fs.statSync(configFile).isFile()) {
@@ -74,11 +78,11 @@ export async function configureAction(opts: OptionValues): Promise<void> {
     if (opts.jellyfinUrl) config.jellyfin.url = `${opts.jellyfinUrl}`;
     if (opts.jellyfinApiKey) config.jellyfin.apiKey = `${opts.jellyfinApiKey}`;
     if (opts.jellyfinCaFile) config.jellyfin.caFile = `${opts.jellyfinCaFile}`;
-    if (opts.jellyfinLibrary) config.jellyfin.library = `${opts.jellyfinLibrary}`;
+    if (opts.jellyfinLibrary) config.jellyfin.library = `${opts.jellyfinLibrary}`.split(",");
     if (opts.jellyfinUser) config.jellyfin.user = `${opts.jellyfinUser}`;
     if (opts.plexUrl) config.plex.url = `${opts.plexUrl}`;
     if (opts.plexToken) config.plex.token = `${opts.plexToken}`;
-    if (opts.plexLibrary) config.plex.library = `${opts.plexLibrary}`;
+    if (opts.plexLibrary) config.plex.library = `${opts.plexLibrary}`.split(",");
     if (opts.plexUser) config.plex.user = `${opts.plexUser}`;
     if(!writeConfig(config)) {
         console.error(`Failed to update ${configFile}!`);

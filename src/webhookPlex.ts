@@ -22,7 +22,7 @@ type PlexPayload = {
         title: string;
         uuid: string;
     };
-    Metadata?: {
+    Metadata: {
         librarySectionType: string;
         librarySectionTitle: string;
         librarySectionID: number;
@@ -59,6 +59,10 @@ type PlexPayload = {
 const anidb_guid_re = /^com.plexapp.agents.hama:\/\/anidb-(\d+)(?:\/\d+\/\d+)?\?lang=(\w+)$/i;
 
 export async function webhookPlex(config: Config, scrobbler: Scrobblers, req: Request, reqid: string): Promise<Response> {
+    if ((config.plex.library.length == 0) && (config.plex.user == undefined)) {
+        return new Response(`[${reqid}] plex: Service Unavailable, not configured.`, {status: 503, statusText: "Service Unavailable"});
+    }
+
     const formData = await req.formData();
     if (formData.has("payload")) {
         const rawData = formData.get("payload") as string;
@@ -69,12 +73,10 @@ export async function webhookPlex(config: Config, scrobbler: Scrobblers, req: Re
         if (
             (data.event == "media.scrobble") &&
             (data.Account.title == config.plex.user) &&
-            (data.Metadata?.librarySectionTitle == config.plex.library) &&
+            (config.plex.library.includes(data.Metadata?.librarySectionTitle)) &&
             (data.Metadata?.librarySectionType == "show") &&
             (data.Metadata?.type == "episode")
         ) {
-            log(`[${reqid}] plex: checking media.scrobble event ...`);
-
             if (data.Metadata?.guid.startsWith('com.plexapp.agents.hama')) { 
                 const anidb_matches = anidb_guid_re.exec(data.Metadata?.guid);
                 if (!anidb_matches || anidb_matches.length != 3) {
@@ -108,7 +110,7 @@ export async function webhookPlex(config: Config, scrobbler: Scrobblers, req: Re
                 log(`[${reqid}] plex: episode metadata not provided by HAMA agent, skipped!`, "warn");
             }
         } else {
-            log(`[${reqid}] plex: ignoring, not a media.scrobble event for the target library and user.`);
+            log(`[${reqid}] plex: ignoring, not interested in this event.`);
         }
 
         return new Response(`[${reqid}] plex: OK`);
