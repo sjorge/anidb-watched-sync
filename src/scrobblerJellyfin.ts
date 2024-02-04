@@ -18,7 +18,7 @@ export class ScrobblerJellyfin {
             (this.config.jellyfin.url == undefined) ||
             (this.config.jellyfin.apiKey == undefined) ||
             (this.config.jellyfin.user == undefined) ||
-            (this.config.jellyfin.library == undefined)
+            (this.config.jellyfin.library.length == 0)
         ) { 
             throw new Error("INFO_JELLYFIN_CONFIG");
         }
