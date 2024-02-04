@@ -1,86 +1,85 @@
 import process from 'node:process';
 import crc32c from 'fast-crc32c';
+import { Server } from 'bun';
+import { log } from './logger';
 import { Config, readConfig } from './configure'
+import { Scrobblers } from './scrobbler';
+import { ScrobblerJellyfin } from './scrobblerJellyfin';
 import { webhookPlex } from './webhookPlex';
 import { webhookJellyfin } from './webhookJellyfin';
-import { JellyfinMiniApi } from './jellyfin';
-
-export function log(msg: string, type: "error" | "warn" | "step" | "done" | "info" = "info"): void {
-    const blank: number = process.stdout.columns ? (process.stdout.columns) : 0;
-    switch(type) {
-        case "error":
-            process.stderr.write(`\r${" ".repeat(blank)}\r[\x1b[31m!!\x1b[0m] ${msg}\n`);
-            break;
-        case "warn":
-            process.stdout.write(`\r${" ".repeat(blank)}\r[\x1b[33mWW\x1b[0m] ${msg}\n`);
-            break;
-        case "info":
-            process.stdout.write(`\r${" ".repeat(blank)}\r[\x1b[34mII\x1b[0m] ${msg}\n`);
-            break;
-        case "done":
-            process.stdout.write(`\r${" ".repeat(blank)}\r[\x1b[32mOK\x1b[0m] ${msg}\n`);
-            break;
-        case "step":
-            process.stdout.write(`\r${" ".repeat(blank)}\r[\x1b[33m>>\x1b[0m] ${msg}`);
-            break;
-    }
-}
 
 export async function webhookAction(): Promise<void> {
+    log("AniDB watched sync v1.0.0");
     const config: Config = readConfig();
+    const scrobbler: Scrobblers = {};
+
+    // setup scrobblers
+    if (config.anilist.token == undefined) {
+        log("Disabling Anilist scrobbling, no token configured.");
+    }
+
     if (
-        (config.jellyfin.url == undefined) ||
-        (config.jellyfin.apiKey == undefined) ||
-        (config.jellyfin.user == undefined) ||
-        (config.jellyfin.library == undefined) ||
         (config.plex.url == undefined) ||
         (config.plex.token == undefined) ||
         (config.plex.user == undefined) ||
         (config.plex.library == undefined)
+    ) {
+        log("Disabling Plex mark as watched, incomplete Plex configuration.");
+    }
+
+    try {
+        scrobbler.jellyfin = new ScrobblerJellyfin(config);
+        await scrobbler.jellyfin.init();
+    } catch (exception) {
+        let err = exception as Error;
+        switch(err.message) {
+            case "INFO_JELLYFIN_CONFIG":
+                log("Disabling Jellyfin mark as watched, no token configured.");
+                break;
+            case "ERROR_JELLYFIN_USERID":
+                log(`Disabling Jellyfin mark as watched, could not lookup UserId for ${config.jellyfin.user}!`, "error");
+                break;
+            case "ERROR_JELLYFIN_LIBRARYID":
+                log(`Disabling Jellyfin mark as watched, could not lookup LibraryId for ${config.jellyfin.library}!`, "error");
+                break;
+            default:
+                log(err.message, "error");
+                break;
+        }
+        scrobbler.jellyfin = undefined;
+    }
+
+    // require at least one scrobbling target
+    if (
+        (scrobbler.anilist == undefined) &&
+        (scrobbler.jellyfin == undefined) &&
+        (scrobbler.plex == undefined)
     ) {
         log("Please run the configure action, configuration not complete.", "error")
         process.exitCode = 1;
         return;
     }
 
-    log("AniDB watched sync v1.0.0");
-
-    // setup jellyfin api
-    const jf = new JellyfinMiniApi(config.jellyfin.url, config.jellyfin.apiKey, config.jellyfin.caFile);
-    log(`Looking up Jellyfin UserId for user ${config.jellyfin.user} ...`, "step");
-    const userId = await jf.getUserId(config.jellyfin.user);
-    if (userId == undefined) {
-        log(`Failed to lookup Jellyfin UserId for ${config.jellyfin.user}!`, "error");
-        process.exitCode = 1;
-        return;
-    }
-    log(`Found Jellyfin UserId ${userId} for ${config.jellyfin.user}.`, "done");
-
-    log(`Looking up Jellyfin LibraryId for ${config.jellyfin.library} ...`, "step");
-    const libraryId = await jf.getLibraryId(config.jellyfin.library, userId);
-    if (libraryId == undefined) {
-        log(`Failed to lookup Jellyfin LibraryId for ${config.jellyfin.library}!`, "error");
-        process.exitCode = 1;
-        return;
-    }
-    log(`Found Jellyfin LibraryId ${libraryId} for ${config.jellyfin.library}.`, "done");
-
     // start webhook server
-    const server = Bun.serve({
+    const server: Server = Bun.serve({
       port: config.webhook.port,
       hostname: config.webhook.bind,
       async fetch(req: Request) {
         const url = new URL(req.url);
-        const reqid = crc32c.calculate(`${Date.now()}_${url}`).toString(16);
+        const clientIP = server.requestIP(req);
+        const clientIPPrintable = (clientIP?.family == "IPv6") ?
+            `[${clientIP?.address}]:${clientIP?.port}` :
+            `${clientIP?.address}:${clientIP?.port}`;
+        const reqid = crc32c.calculate(`${Date.now()}_${url}_${clientIPPrintable}`).toString(16);
 
-        log(`[${reqid}] webhook ${req.method} ${url.pathname} ...`);
+        log(`[${reqid}] webhook: ${req.method} ${url.pathname} from ${clientIPPrintable}`);
         if (req.method == "POST") {
             switch(url.pathname) {
                 case "/plex":
-                    return webhookPlex(config, req, reqid, jf, userId, libraryId);
+                    return webhookPlex(config, scrobbler, req, reqid);
                     break;
                 case "/jellyfin":
-                    return webhookJellyfin(config, req, reqid);
+                    return webhookJellyfin(config, scrobbler, req, reqid);
                     break;
             }
         }

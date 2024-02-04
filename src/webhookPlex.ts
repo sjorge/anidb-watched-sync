@@ -1,6 +1,7 @@
-import { log } from './webhook';
+import { log } from './logger';
 import { Config } from './configure';
-import { JellyfinMiniApi, JellyfinProviderSeries, JellyfinSeriesEpisodes } from './jellyfin';
+import { Scrobblers } from './scrobbler';
+import { JellyfinProviderSeries, JellyfinSeriesEpisodes } from './jellyfin';
 
 type PlexPayload = {
     event: string;
@@ -57,7 +58,7 @@ type PlexPayload = {
 
 const anidb_guid_re = /^com.plexapp.agents.hama:\/\/anidb-(\d+)(?:\/\d+\/\d+)?\?lang=(\w+)$/i;
 
-export async function webhookPlex(config: Config, req: Request, reqid: string, jfApi: JellyfinMiniApi, jfUserId: string, jfLibraryId: string): Promise<Response> {
+export async function webhookPlex(config: Config, scrobbler: Scrobblers, req: Request, reqid: string): Promise<Response> {
     const formData = await req.formData();
     if (formData.has("payload")) {
         const rawData = formData.get("payload") as string;
@@ -66,7 +67,7 @@ export async function webhookPlex(config: Config, req: Request, reqid: string, j
 
         log(`[${reqid}] plex: event=${data.event} username=${data.Account.title} library=${data.Metadata?.librarySectionTitle} ...`);
         if (
-            (data.event == "media.play") && // XXX: switch back to media.scrobble
+            (data.event == "media.scrobble") &&
             (data.Account.title == config.plex.user) &&
             (data.Metadata?.librarySectionTitle == config.plex.library) &&
             (data.Metadata?.librarySectionType == "show") &&
@@ -87,31 +88,28 @@ export async function webhookPlex(config: Config, req: Request, reqid: string, j
                     log(`[${reqid}] plex: detected as ${anidb_id}: ${media_series} - S${media_season}E${media_episode} - ${media_title}!`);
 
                     if ((media_season >= 0) && (media_episode >= 0)) {
-                        log(`[${reqid}] plex: querying Jellyfin for matching series ...`);
-                        const jfAniDBSeries: JellyfinProviderSeries = await jfApi.getSeriesWithProvider(jfLibraryId, jfUserId, "anidb");
-                        if (
-                            (Object.keys(jfAniDBSeries).length != 0) ||
-                            (Object.keys(jfAniDBSeries).includes(`${anidb_id}`))
-                        ) {
-                            const jfSeries = jfAniDBSeries[`${anidb_id}`];
-                            if (!jfSeries.completed) { // NOTE: do nothing when series already marked as completed
-                                const jfEpisodes = await jfApi.getEpisodesFromSeries(jfSeries.id, jfUserId, media_season);
-                                for (let episode of Object.values(jfEpisodes)) {
-                                    if (episode.season != media_season) continue;
-                                    if (episode.episode != media_episode) continue;
-                                    if (episode.watched) continue;
-                                    if (await jfApi.markWatched(episode.id, jfUserId)) {
-                                        log(`[${reqid}] plex: marked as watched on Jellyfin!`);
-                                    } else {
-                                        log(`[${reqid}] plex: failed to mark as watched on Jellyfin!`, "error");
-                                    }
-                                }
-                            }
-                        } else {
-                            log(`[${reqid}] plex: unable to find matching anidb series on Jellyfin server!`, "warn"); 
+                        if (scrobbler.jellyfin?.scrobble !== undefined) {
+                            scrobbler.jellyfin.scrobble(anidb_id, media_episode, media_season)
+                                .then((success: boolean) => {
+                                    const log_lvl = (success ? "info" : "warn");
+                                    const log_msg = (success ? "successful" : "unable to find series");
+                                    log(`[${reqid}] plex: scrobbled to Jellyfin: ${log_msg}`, log_lvl);
+                                }).catch((err: Error) => {
+                                    log(`[${reqid}] plex: scrobbled to Jellyfin: ${err.message}`, "error");
+                                });
+                        }
+                        if (scrobbler.anilist?.scrobble !== undefined) {
+                            scrobbler.anilist.scrobble(anidb_id, media_episode, media_season)
+                                .then((success: boolean) => {
+                                    const log_lvl = (success ? "info" : "warn");
+                                    const log_msg = (success ? "successful" : "unable to find series");
+                                    log(`[${reqid}] plex: scrobbled to Anilist: ${log_msg}`, log_lvl);
+                                }).catch((err: Error) => {
+                                    log(`[${reqid}] plex: scrobbled to Anilist: ${err.message}`, "error");
+                                });
                         }
                     } else {
-                        log(`[${reqid}] plex: failed to extra usable season and episode!`, "warn"); 
+                        log(`[${reqid}] plex: failed to extract usable season and episode!`, "warn"); 
                     }
                 }
             } else {

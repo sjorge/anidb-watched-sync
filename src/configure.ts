@@ -12,6 +12,9 @@ export type Config = {
         bind: string;
         port: number;
     },
+    anilist: {
+        token?: string;
+    };
     jellyfin: {
         url?: string;
         apiKey?: string;
@@ -35,6 +38,7 @@ export function readConfig(): Config {
             bind: 'localhost',
             port: 4091,
         },
+        anilist: {},
         jellyfin: {},
         plex: {},
     };
@@ -66,6 +70,7 @@ export async function configureAction(opts: OptionValues): Promise<void> {
     const config: Config = readConfig();
     if (opts.webhookBind) config.webhook.bind = `${opts.webhookBind}`;
     if (opts.webhookPort) config.webhook.port = parseInt(`${opts.webhookPort}`);
+    if (opts.anilistToken) config.anilist.token = `${opts.anilistToken}`;
     if (opts.jellyfinUrl) config.jellyfin.url = `${opts.jellyfinUrl}`;
     if (opts.jellyfinApiKey) config.jellyfin.apiKey = `${opts.jellyfinApiKey}`;
     if (opts.jellyfinCaFile) config.jellyfin.caFile = `${opts.jellyfinCaFile}`;

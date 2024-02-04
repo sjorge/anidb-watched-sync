@@ -13,6 +13,7 @@ program
     .description('update configuration file')
     .option('--webhook-bind <ip>', 'optional IP where webhook binds on (default to localhost)')
     .option('--webhook-port <port>', 'optional port where webhook binds on (default to 4091)')
+    .option('--anilist-token <token>', 'your anilist http client token use for scrobbling')
     .option('--jellyfin-url <url>', 'jellyfin server URL')
     .option('--jellyfin-api-key <api_key>', 'jellyfin API key')
     .option('--jellyfin-ca-file <ca_file>', 'optional CA file for jellyfin')
