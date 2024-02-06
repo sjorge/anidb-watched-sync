@@ -53,10 +53,7 @@ export class ScrobblerJellyfin {
         let foundSeries = false;
         for (const libraryId of this.libraryId) {
             const series: JellyfinProviderSeries = await this.api.getSeriesWithProvider(libraryId, this.userId, "anidb");
-            if (
-                (Object.keys(series).length != 0) ||
-                (Object.keys(series).includes(`${aid}`))
-            ) {
+            if (Object.keys(series).includes(`${aid}`)) {
                 const targetSeries = series[`${aid}`];
                 foundSeries = true;
                 if (!targetSeries.completed) { // NOTE: do nothing when targetSeries already marked as completed
