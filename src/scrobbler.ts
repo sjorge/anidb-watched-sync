@@ -1,3 +1,4 @@
+import { ScrobblerAnilist } from './scrobblerAnilist';
 import { ScrobblerJellyfin } from './scrobblerJellyfin';
 
 export type ScrobbleResult = {
@@ -7,7 +8,7 @@ export type ScrobbleResult = {
 };
 
 export type Scrobblers = {
-    anilist?: ScrobblerJellyfin; // XXX: update once we have a ScrobblerAnilist class
+    anilist?: ScrobblerAnilist;
     jellyfin?: ScrobblerJellyfin;
     plex?: ScrobblerJellyfin; // XXX: update once we have a ScrobblerPlex class
 };

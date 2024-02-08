@@ -13,7 +13,7 @@ export async function webhookJellyfin(config: Config, scrobbler: Scrobblers, req
     }
 
     const data = await req.json();
-    console.log(data);
+    log(JSON.stringify(data));
 
     return new Response(`[${reqid}] jellyfin: Bad Request`, {status: 400, statusText: "Bad Request"});
 }

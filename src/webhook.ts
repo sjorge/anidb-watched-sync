@@ -5,6 +5,7 @@ import { log } from './logger';
 import { Config, readConfig } from './configure'
 import { Scrobblers } from './scrobbler';
 import { ScrobblerJellyfin } from './scrobblerJellyfin';
+import { ScrobblerAnilist } from './scrobblerAnilist';
 import { webhookPlex } from './webhookPlex';
 import { webhookJellyfin } from './webhookJellyfin';
 
@@ -14,8 +15,23 @@ export async function webhookAction(): Promise<void> {
     const scrobbler: Scrobblers = {};
 
     // setup scrobblers
-    if (config.anilist.token == undefined) {
-        log("Disabling Anilist scrobbling, no token configured.");
+    try {
+        scrobbler.anilist = new ScrobblerAnilist(config);
+        await scrobbler.anilist.init();
+    } catch (exception) {
+        const err = exception as Error;
+        switch(err.message) {
+            case "INFO_ANILIST_CONFIG":
+                log("Disabling Anilist scrobbling, no token configured.");
+                break;
+            case "ERR_ANILIST_PROFILE":
+                log(`Disabling Anilist scrobbling, could not retrieve profile!`, "error");
+                break;
+            default:
+                log(err.message, "error");
+                break;
+        }
+        scrobbler.anilist = undefined;
     }
 
     if (
@@ -31,7 +47,7 @@ export async function webhookAction(): Promise<void> {
         scrobbler.jellyfin = new ScrobblerJellyfin(config);
         await scrobbler.jellyfin.init();
     } catch (exception) {
-        let err = exception as Error;
+        const err = exception as Error;
         switch(err.message) {
             case "INFO_JELLYFIN_CONFIG":
                 log("Disabling Jellyfin mark as watched, no token configured.");
