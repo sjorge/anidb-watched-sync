@@ -58,7 +58,7 @@ export class ScrobblerJellyfin {
                 foundSeries = true;
                 if (!targetSeries.completed) { // NOTE: do nothing when targetSeries already marked as completed
                     const episodes: JellyfinSeriesEpisodes = await this.api.getEpisodesFromSeries(targetSeries.id, this.userId, season);
-                    for (let targetEpisode of Object.values(episodes)) {
+                    for (const targetEpisode of Object.values(episodes)) {
                         if (targetEpisode.season != season) continue;
                         if (targetEpisode.episode != episode) continue;
                         if (targetEpisode.watched) continue;
@@ -81,7 +81,7 @@ export class ScrobblerJellyfin {
         } as ScrobbleResult : {
             success: false,
             log_lvl: "warn",
-            log_msg: "could not find series with anidb id ${aid} on server,",
+            log_msg: `could not find series with anidb id ${aid} on server.`,
         } as ScrobbleResult;
     }
 }

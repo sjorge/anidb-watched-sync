@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "anilist-node": "^1.14.0",
     "axios": "^1.6.3",
     "braces": "^3.0.2",
     "commander": "^11.1.0",

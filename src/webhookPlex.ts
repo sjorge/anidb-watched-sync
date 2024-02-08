@@ -1,7 +1,6 @@
 import { log } from './logger';
 import { Config } from './configure';
 import { Scrobblers, ScrobbleResult } from './scrobbler';
-import { JellyfinProviderSeries, JellyfinSeriesEpisodes } from './jellyfin';
 
 type PlexPayload = {
     event: string;

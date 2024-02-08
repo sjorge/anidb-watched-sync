@@ -7,6 +7,10 @@ export type JellyfinProviderSeries = {
         name: string;
         id: string;
         completed: boolean;
+        providerIds: {
+            anidb?: number;
+            anilist?: number;
+        };
     };
 };
 
@@ -103,6 +107,10 @@ export class JellyfinMiniApi {
                         id: show.Id,
                         name: show.Name,
                         completed: (show.UserData.PlayedPercentage == 100),               
+                        providerIds: {
+                            anidb: show.ProviderIds.anidb ? parseInt(show.ProviderIds.anidb) : undefined,
+                            anilist: show.ProviderIds.anilist ? parseInt(show.ProviderIds.anilist) : undefined,
+                        },
                     };
                 }
             }
