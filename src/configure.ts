@@ -30,7 +30,13 @@ export type Config = {
     };
 };
 
-const configFile: string = path.join(os.homedir(), '.config', 'pjaws', 'config.toml');
+const configDir: string = (
+    process.env.XDG_CONFIG_HOME ?
+    path.join(process.env.XDG_CONFIG_HOME, 'anidb-watched-sync') :
+    path.join(os.homedir(), '.config', 'anidb-watched-sync')
+);
+
+const configFile: string = process.env.AWS_CONFIG ? process.env.AWS_CONFIG : path.join(configDir, 'config.toml');
 
 export function readConfig(): Config {
     let config: Config = {
