@@ -1,0 +1,16 @@
+[Unit]
+Description=Anidb Watched Sync
+After=network.target
+
+[Service]
+ExecStart=/opt/anidb-watched-sync/bin/aws webhook
+WorkingDirectory=/opt/anidb-watched-sync
+Environment="AWS_CONFIG=/opt/anidb-watched-sync/etc/config.toml"
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+DynamicUser=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
