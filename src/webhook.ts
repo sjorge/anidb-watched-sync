@@ -1,5 +1,4 @@
 import process from 'node:process';
-import crc32c from 'fast-crc32c';
 import { Server } from 'bun';
 import { log } from './logger';
 import { Config, readConfig } from './configure'
@@ -86,7 +85,7 @@ export async function webhookAction(): Promise<void> {
         const clientIPPrintable = (clientIP?.family == "IPv6") ?
             `[${clientIP?.address}]:${clientIP?.port}` :
             `${clientIP?.address}:${clientIP?.port}`;
-        const reqid = crc32c.calculate(`${Date.now()}_${url}_${clientIPPrintable}`).toString(16);
+        const reqid = Bun.hash.crc32(`${Date.now()}_${url}_${clientIPPrintable}`).toString(16);
 
         log(`[${reqid}] webhook: ${req.method} ${url.pathname} from ${clientIPPrintable}`);
         if (req.method == "POST") {

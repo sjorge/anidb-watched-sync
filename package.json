@@ -33,7 +33,6 @@
     "braces": "^3.0.2",
     "commander": "^11.1.0",
     "deepmerge-ts": "^5.1.0",
-    "fast-crc32c": "^2.0.0",
     "plex-sdk": "^3.0.4"
   },
   "overrides": {
