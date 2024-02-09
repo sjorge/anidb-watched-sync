@@ -23,6 +23,18 @@ export type JellyfinSeriesEpisodes = {
     };
 };
 
+export type JellyfinEpisodeDetail = {
+    Id: string;
+    SeriesId: string;
+    SeasonId: string;
+    ParentIndexNumber: number;
+    IndexNumber: number;
+    ProviderIds: {
+        anidb?: number;
+        anilist?: number;
+    };
+};
+
 export class JellyfinMiniApi {
     private client;
 
@@ -80,6 +92,41 @@ export class JellyfinMiniApi {
 
         for (const library of libraries.Items) {
             if (library.Name == libraryName) return library.Id;
+        }
+
+        return undefined;
+    }
+
+    public async getEpisodeData(itemId: string, userId: string): Promise<JellyfinEpisodeDetail|undefined> {
+        const resEpisode = await this.query(
+            `/Users/${userId}/Items` +
+            `?Ids=${itemId}&Fields=ParentId,SeriesId&limit=100&StartIndex=0`
+        );
+        if ((resEpisode.TotalRecordCount == 1) && (resEpisode.Items[0].Type == "Episode") && (resEpisode.Items[0].SeriesId != undefined)) {
+            const resSeries = await this.query(
+                `/Users/${userId}/Items` +
+                `?Ids=${resEpisode.Items[0].SeriesId}&Fields=ParentId,LibrayrId,ProviderIds&limit=100&StartIndex=0`
+            );
+            if ((resSeries.TotalRecordCount == 1) && (resSeries.Items[0].Type == "Series") && (resSeries.Items[0].ParentId != undefined)) {
+                const anidb_id: number|undefined = (resSeries.Items[0].ProviderIds.anidb != undefined) ?
+                    parseInt(resSeries.Items[0].ProviderIds.anidb) :
+                    undefined;
+                const anilist_id: number|undefined = (resSeries.Items[0].ProviderIds.anilist != undefined) ?
+                    parseInt(resSeries.Items[0].ProviderIds.anilist) :
+                    undefined;
+
+                return {
+                    Id: resEpisode.Items[0].Id,
+                    SeriesId: resEpisode.Items[0].SeriesId,
+                    SeasonId: resEpisode.Items[0].SeasonId,
+                    ParentIndexNumber: resEpisode.Items[0].ParentIndexNumber,
+                    IndexNumber: resEpisode.Items[0].IndexNumber,
+                    ProviderIds: {
+                        anidb: anidb_id,
+                        anilist: anilist_id,
+                    },
+                } as JellyfinEpisodeDetail;
+            }
         }
 
         return undefined;
