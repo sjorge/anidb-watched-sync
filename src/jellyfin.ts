@@ -150,15 +150,19 @@ export class JellyfinMiniApi {
             for (const show of res.Items) {
                 const providerId = show.ProviderIds[providerName];
                 if (providerId !== undefined) {
-                    shows[providerId] = {
-                        id: show.Id,
-                        name: show.Name,
-                        completed: (show.UserData.PlayedPercentage == 100),               
-                        providerIds: {
-                            anidb: show.ProviderIds.anidb ? parseInt(show.ProviderIds.anidb) : undefined,
-                            anilist: show.ProviderIds.anilist ? parseInt(show.ProviderIds.anilist) : undefined,
-                        },
-                    };
+                    if (shows[providerId] != undefined) {
+                        shows[providerId].id += `,${show.Id}`;
+                    } else {
+                        shows[providerId] = {
+                            id: show.Id,
+                            name: show.Name,
+                            completed: (show.UserData.PlayedPercentage == 100),
+                            providerIds: {
+                                anidb: show.ProviderIds.anidb ? parseInt(show.ProviderIds.anidb) : undefined,
+                                anilist: show.ProviderIds.anilist ? parseInt(show.ProviderIds.anilist) : undefined,
+                            },
+                        };
+                    }
                 }
             }
         }
@@ -169,26 +173,30 @@ export class JellyfinMiniApi {
     public async getEpisodesFromSeries(seriesId: string, userId: string, season: number = 1): Promise<JellyfinSeriesEpisodes> {
         const episodes: JellyfinSeriesEpisodes = {};
 
-        let index: number = 0;
-        let total: number = 100;
+        const seriesIds = seriesId.indexOf(",") ? seriesId.split(",") : [seriesId];
 
-        while (index < total) {
-            const res = await this.query(
-                `/Users/${userId}/Items` +
-                `?ParentId=${seriesId}&Recursive=True&IncludeItemTypes=Episodes&Fields=ProviderIds,Path,RecursiveItemCount&limit=100&StartIndex=${index}`
-            );
+        for (const id of seriesIds) {
+            let index: number = 0;
+            let total: number = 100;
 
-            total = res.TotalRecordCount;
-            index += 100;
+            while (index < total) {
+                const res = await this.query(
+                    `/Users/${userId}/Items` +
+                    `?ParentId=${id}&Recursive=True&IncludeItemTypes=Episodes&Fields=ProviderIds,Path,RecursiveItemCount&limit=100&StartIndex=${index}`
+                );
 
-            for (const episode of res.Items) {
-                if (episode.ParentIndexNumber != season) continue;
-                episodes[episode.IndexNumber] = {
-                    id: episode.Id,
-                    season: episode.ParentIndexNumber,
-                    episode: episode.IndexNumber,
-                    watched: episode.UserData.Played,
-                };
+                total = res.TotalRecordCount;
+                index += 100;
+
+                for (const episode of res.Items) {
+                    if (episode.ParentIndexNumber != season) continue;
+                    episodes[episode.IndexNumber] = {
+                        id: episode.Id,
+                        season: episode.ParentIndexNumber,
+                        episode: episode.IndexNumber,
+                        watched: episode.UserData.Played,
+                    };
+                }
             }
         }
 
