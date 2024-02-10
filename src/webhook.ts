@@ -3,8 +3,9 @@ import { Server } from 'bun';
 import { log } from './logger';
 import { Config, readConfig } from './configure'
 import { Scrobblers } from './scrobbler';
-import { ScrobblerJellyfin } from './scrobblerJellyfin';
 import { ScrobblerAnilist } from './scrobblerAnilist';
+import { ScrobblerPlex } from './scrobblerPlex';
+import { ScrobblerJellyfin } from './scrobblerJellyfin';
 import { webhookPlex } from './webhookPlex';
 import { webhookJellyfin } from './webhookJellyfin';
 
@@ -33,13 +34,23 @@ export async function webhookAction(): Promise<void> {
         scrobbler.anilist = undefined;
     }
 
-    if (
-        (config.plex.url == undefined) ||
-        (config.plex.token == undefined) ||
-        (config.plex.user == undefined) ||
-        (config.plex.library == undefined)
-    ) {
-        log("Disabling Plex mark as watched, incomplete Plex configuration.");
+    try {
+        scrobbler.plex = new ScrobblerPlex(config);
+        await scrobbler.plex.init();
+    } catch (exception) {
+        const err = exception as Error;
+        switch(err.message) {
+            case "INFO_JELLYFIN_CONFIG":
+                log("Disabling Plex mark as watched, incomplete Plex configuration.");
+                break;
+            case "ERR_PLEX_URL":
+                log(`Disabling Plex mark as watched, could not parse URL!`, "error");
+                break;
+            default:
+                log(err.message, "error");
+                break;
+        }
+        scrobbler.jellyfin = undefined;
     }
 
     try {
@@ -61,7 +72,7 @@ export async function webhookAction(): Promise<void> {
                 log(err.message, "error");
                 break;
         }
-        scrobbler.jellyfin = undefined;
+        scrobbler.plex = undefined;
     }
 
     // require at least one scrobbling target

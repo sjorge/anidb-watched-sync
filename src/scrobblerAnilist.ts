@@ -261,8 +261,6 @@ export class ScrobblerAnilist {
                     }
                 }
             }
-
-            console.log(`XXX: scrobble to Anilist with id ${anilistId} ...`);
         } catch (err: unknown) {
             return {
                 success: false,
