@@ -1,7 +1,7 @@
 # anidb-watched-sync
 This is a webhook server that handles incomming webhook requests from **Plex Media Server** and **Jellyfin**.
 
-It is able to scrobble anime playback to **Anilist**, **Plex**, and **Jellyfin**, depending on what is configured.
+It is able to scrobble anime playback to **Anilist**, **Plex**, and **Jellyfin**, depending on what is configured. It requires both Plex (via [com.plexapp.agents.hama](https://github.com/ZeroQI/Hama.bundle)) and Jellyfin (with the anidb plugin) to use anidb for your anime.
 
 ## building
 
