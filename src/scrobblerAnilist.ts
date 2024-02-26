@@ -51,38 +51,48 @@ export class ScrobblerAnilist {
         }
 
         // jellyfin config is optional (so non fatal if not configured)
+        await this.initJellyfinApi();
+    }
+
+    private async initJellyfinApi(): Promise<void> {
         if (
+            (this.jellyfinApi == undefined) &&
             (this.config.jellyfin.url != undefined) &&
             (this.config.jellyfin.apiKey != undefined) &&
             (this.config.jellyfin.user != undefined) &&
             (this.config.jellyfin.library.length != 0)
         ) { 
-            this.jellyfinApi = new JellyfinMiniApi(this.config.jellyfin.url, this.config.jellyfin.apiKey, this.config.jellyfin.caFile);
-            const userId = await this.jellyfinApi.getUserId(this.config.jellyfin.user);
-            if (userId != undefined) {
-                this.jellyfinUserId = userId;
+            try {
+                this.jellyfinApi = new JellyfinMiniApi(this.config.jellyfin.url, this.config.jellyfin.apiKey, this.config.jellyfin.caFile);
+                const userId = await this.jellyfinApi.getUserId(this.config.jellyfin.user);
+                if (userId != undefined) {
+                    this.jellyfinUserId = userId;
 
-                for (const library of this.config.jellyfin.library) {
-                    const libraryId = await this.jellyfinApi.getLibraryId(library, this.jellyfinUserId);
-                    if (libraryId != undefined) {
-                        this.jellyfinLibraryId.push(libraryId);
+                    for (const library of this.config.jellyfin.library) {
+                        const libraryId = await this.jellyfinApi.getLibraryId(library, this.jellyfinUserId);
+                        if (libraryId != undefined) {
+                            this.jellyfinLibraryId.push(libraryId);
+                        }
                     }
                 }
-            }
 
-            // unset jellyfinApi if config not OK
-            if (
-                (this.jellyfinLibraryId.length == 0) ||
-                (this.jellyfinUserId == undefined)
-            ) {
+                // unset jellyfinApi if config not OK
+                if (
+                    (this.jellyfinLibraryId.length == 0) ||
+                    (this.jellyfinUserId == undefined)
+                ) {
+                    this.jellyfinApi = undefined;
+                    this.jellyfinUserId = undefined;
+                    this.jellyfinLibraryId = [];
+                }
+            } catch (err: unknown) {
                 this.jellyfinApi = undefined;
-                this.jellyfinUserId = undefined;
-                this.jellyfinLibraryId = [];
             }
         }
     }
 
     private async lookupJellyfinAnilistId(aid: number): Promise<number> {
+        await this.initJellyfinApi();
         if ((this.jellyfinApi == undefined) || (this.jellyfinUserId == undefined)) return -1;
 
         for (const libraryId of this.jellyfinLibraryId) {
