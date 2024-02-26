@@ -44,7 +44,7 @@ export class ScrobblerJellyfin {
     public async scrobble(aid: number, episode: number, season: number = 1): Promise<ScrobbleResult> {
         if ((this.api == undefined) || (this.libraryId.length == 0) || (this.userId == undefined)) {
             try {
-                this.init();
+                await this.init();
             } catch (err: unknown) {
                 return {
                     success: false,
