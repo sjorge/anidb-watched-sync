@@ -43,11 +43,23 @@ export class ScrobblerJellyfin {
 
     public async scrobble(aid: number, episode: number, season: number = 1): Promise<ScrobbleResult> {
         if ((this.api == undefined) || (this.libraryId.length == 0) || (this.userId == undefined)) {
-            return {
-                success: false,
-                log_lvl: "error",
-                log_msg: "not initialized!",
-            } as ScrobbleResult;
+            try {
+                this.init();
+            } catch (err: unknown) {
+                return {
+                    success: false,
+                    log_lvl: "error",
+                    log_msg: "could not initialized jellyfin api!",
+                } as ScrobbleResult;
+            } finally {
+                if ((this.api == undefined) || (this.libraryId.length == 0) || (this.userId == undefined)) {
+                    return {
+                        success: false,
+                        log_lvl: "error",
+                        log_msg: "not initialized!",
+                    } as ScrobbleResult;
+                }
+            }
         }
 
         let foundSeries = false;

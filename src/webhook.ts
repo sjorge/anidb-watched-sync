@@ -1,5 +1,6 @@
 import process from 'node:process';
 import { Server } from 'bun';
+import { AxiosError } from 'axios';
 import { log } from './logger';
 import { Config, readConfig } from './configure'
 import { Scrobblers } from './scrobbler';
@@ -61,18 +62,31 @@ export async function webhookAction(): Promise<void> {
         switch(err.message) {
             case "INFO_JELLYFIN_CONFIG":
                 log("Disabling Jellyfin mark as watched, no token configured.");
+                scrobbler.jellyfin = undefined;
                 break;
             case "ERROR_JELLYFIN_USERID":
                 log(`Disabling Jellyfin mark as watched, could not lookup UserId for ${config.jellyfin.user}!`, "error");
+                scrobbler.jellyfin = undefined;
                 break;
             case "ERROR_JELLYFIN_LIBRARYID":
                 log(`Disabling Jellyfin mark as watched, could not lookup LibraryId for ${config.jellyfin.library}!`, "error");
+                scrobbler.jellyfin = undefined;
                 break;
             default:
-                log(err.message, "error");
+                // jellyfin could be temperarily unreachable
+                //   do not treat these as fatal and continue, if jellyfin is back later
+                //   we can still scrobble.
+                if (err.name == "AxiosError") {
+                    const ae = err as AxiosError;
+                    if (ae.code == "ERR_BAD_RESPONSE") break;
+                    if (ae.code == "ETIMEDOUT") break;
+                    if (ae.code == "ERR_NETWORK") break;
+                }
+
+                log(`Disabling Jellfin mark as watched, ${err.message}`, "error");
+                scrobbler.jellyfin = undefined;
                 break;
         }
-        scrobbler.plex = undefined;
     }
 
     // require at least one scrobbling target
