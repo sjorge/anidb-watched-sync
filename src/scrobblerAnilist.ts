@@ -108,9 +108,9 @@ export class ScrobblerAnilist {
         return -1;
     }
 
-    private async lookupMappedAnilistId(aid: number): Promise<number> {
+    private async lookupMappedAnilistId(aid: number, retryDownload: number = 1): Promise<number> {
+        const mappingFile = path.join(this.cacheDir, 'mapping.json');
         try {
-            const mappingFile = path.join(this.cacheDir, 'mapping.json');
             fs.mkdirSync(this.cacheDir, { recursive: true, mode: 0o750 });
 
             // expire cached file if older than 7 days 
@@ -139,7 +139,20 @@ export class ScrobblerAnilist {
                 }
             }
         } catch (err: unknown) {
-            return -1;
+            try {
+                const error = err as Error;
+                if (error.name == "SyntaxError") {
+                    fs.unlinkSync(mappingFile);
+                    if (retryDownload > 0) {
+                        return await this.lookupMappedAnilistId(aid, (retryDownload - 1));
+                    } else {
+                        return -1;
+                    }
+                }
+            } catch (err: unknown) {
+                console.error(err);
+                return -1;
+            }
         }
 
         return -1;
