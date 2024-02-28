@@ -1,8 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import stream from 'node:stream';
-import util from 'node:util';
-import axios from 'axios';
 import AniList from "anilist-node";
 import { Anilist } from "anilist-node";
 import { Config } from './configure'
@@ -111,7 +108,7 @@ export class ScrobblerAnilist {
     private async lookupMappedAnilistId(aid: number, retryDownload: number = 1): Promise<number> {
         const mappingFile = path.join(this.cacheDir, 'mapping.json');
         try {
-            fs.mkdirSync(this.cacheDir, { recursive: true, mode: 0o750 });
+            fs.mkdirSync(this.cacheDir, { recursive: true, mode: 0o755 });
 
             // expire cached file if older than 7 days 
             if (fs.existsSync(mappingFile)) {
@@ -123,11 +120,9 @@ export class ScrobblerAnilist {
 
             // download mapping if required
             if (!fs.existsSync(mappingFile)) {
-                await axios.get(PlexMetaManagerUrl, { responseType: 'stream' }).then(async (response) => {
-                    const writer = fs.createWriteStream(mappingFile, { encoding: 'utf8', mode: 0o660 });
-                    response.data.pipe(writer);
-                    await util.promisify(stream.finished)(writer);
-                });
+                const response = await fetch(PlexMetaManagerUrl);
+                await Bun.write(mappingFile, response);
+                fs.chmodSync(mappingFile, 0o666);
             }
 
             // search mapping
@@ -150,7 +145,6 @@ export class ScrobblerAnilist {
                     }
                 }
             } catch (err: unknown) {
-                console.error(err);
                 return -1;
             }
         }

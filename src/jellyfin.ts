@@ -46,7 +46,8 @@ export class JellyfinMiniApi {
         this.client = axios.create({
             baseURL: url.endsWith("/") ?  url : `${url}/`,
             httpsAgent: httpClient,
-            timeout: 10000,
+            // timeout not yet supported under bun (ERR_NOT_IMPLEMENTED)
+            // timeout: 10000,
             headers: {
                 "Accept": "application/json",
                 "X-Emby-Token": apiKey,

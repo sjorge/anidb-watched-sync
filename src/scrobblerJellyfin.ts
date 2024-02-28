@@ -51,14 +51,13 @@ export class ScrobblerJellyfin {
                     log_lvl: "error",
                     log_msg: "could not initialized jellyfin api!",
                 } as ScrobbleResult;
-            } finally {
-                if ((this.api == undefined) || (this.libraryId.length == 0) || (this.userId == undefined)) {
-                    return {
-                        success: false,
-                        log_lvl: "error",
-                        log_msg: "not initialized!",
-                    } as ScrobbleResult;
-                }
+            }
+            if ((this.api == undefined) || (this.libraryId.length == 0) || (this.userId == undefined)) {
+                return {
+                    success: false,
+                    log_lvl: "error",
+                    log_msg: "not initialized!",
+                } as ScrobbleResult;
             }
         }
 
