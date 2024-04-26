@@ -17,7 +17,7 @@ type PlexMetaManagerMapping = {
     };
 };
 
-const PlexMetaManagerUrl: string = "https://raw.githubusercontent.com/meisnate12/Plex-Meta-Manager-Anime-IDs/master/pmm_anime_ids.json";
+const PlexMetaManagerUrl: string = "https://raw.githubusercontent.com/Kometa-Team/Anime-IDs/master/anime_ids.json";
 
 export class ScrobblerAnilist {
     private config: Config;
