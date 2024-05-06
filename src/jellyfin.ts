@@ -50,8 +50,7 @@ export class JellyfinMiniApi {
             // timeout: 10000,
             headers: {
                 "Accept": "application/json",
-                "X-Emby-Token": apiKey,
-                "X-Emby-Authorization": 'MediaBrowser, Client="other", Device="script", DeviceId="script", Version="0.0.0"',
+                "Authorization": `MediaBrowser Token="${apiKey}", Client="jellyfin-anilist-sync", Device="script", DeviceId="0de6b4ba", Version="1.0.0"`,
             }
         });
     }
