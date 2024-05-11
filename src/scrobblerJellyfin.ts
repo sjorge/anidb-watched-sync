@@ -63,7 +63,7 @@ export class ScrobblerJellyfin {
 
         let foundSeries = false;
         for (const libraryId of this.libraryId) {
-            const series: JellyfinProviderSeries = await this.api.getSeriesWithProvider(libraryId, this.userId, "anidb");
+            const series: JellyfinProviderSeries = await this.api.getSeriesWithProvider(libraryId, this.userId, "AniDB");
             if (Object.keys(series).includes(`${aid}`)) {
                 const targetSeries = series[`${aid}`];
                 foundSeries = true;

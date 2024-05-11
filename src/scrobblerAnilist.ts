@@ -93,7 +93,7 @@ export class ScrobblerAnilist {
         if ((this.jellyfinApi == undefined) || (this.jellyfinUserId == undefined)) return -1;
 
         for (const libraryId of this.jellyfinLibraryId) {
-            const series: JellyfinProviderSeries = await this.jellyfinApi.getSeriesWithProvider(libraryId, this.jellyfinUserId, "anidb");
+            const series: JellyfinProviderSeries = await this.jellyfinApi.getSeriesWithProvider(libraryId, this.jellyfinUserId, "AniDB");
             if (Object.keys(series).includes(`${aid}`)) {
                 const targetSeries = series[`${aid}`];
                 if (targetSeries.providerIds.anilist != undefined) {

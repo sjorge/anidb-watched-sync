@@ -108,12 +108,20 @@ export class JellyfinMiniApi {
                 `?Ids=${resEpisode.Items[0].SeriesId}&Fields=ParentId,LibrayrId,ProviderIds&limit=100&StartIndex=0`
             );
             if ((resSeries.TotalRecordCount == 1) && (resSeries.Items[0].Type == "Series") && (resSeries.Items[0].ParentId != undefined)) {
-                const anidb_id: number|undefined = (resSeries.Items[0].ProviderIds.anidb != undefined) ?
-                    parseInt(resSeries.Items[0].ProviderIds.anidb) :
-                    undefined;
-                const anilist_id: number|undefined = (resSeries.Items[0].ProviderIds.anilist != undefined) ?
-                    parseInt(resSeries.Items[0].ProviderIds.anilist) :
-                    undefined;
+                const anidb_id: number|undefined = (resSeries.Items[0].ProviderIds.AniDB != undefined) ?
+                    parseInt(resSeries.Items[0].ProviderIds.AniDB) :
+                    (
+                        (resSeries.Items[0].ProviderIds.anidb != undefined) ?
+                        parseInt(resSeries.Items[0].ProviderIds.anidb) :
+                        undefined
+                    );
+                const anilist_id: number|undefined = (resSeries.Items[0].ProviderIds.AniList != undefined) ?
+                    parseInt(resSeries.Items[0].ProviderIds.AniList) :
+                    (
+                        (resSeries.Items[0].ProviderIds.anilist != undefined) ?
+                        parseInt(resSeries.Items[0].ProviderIds.anilist) :
+                        undefined
+                    );
 
                 return {
                     Id: resEpisode.Items[0].Id,
@@ -148,7 +156,15 @@ export class JellyfinMiniApi {
             index += 100;
 
             for (const show of res.Items) {
-                const providerId = show.ProviderIds[providerName];
+                let providerId = show.ProviderIds[providerName];
+                if (providerId == undefined) {
+                    for (const provider of Object.keys(show.ProviderIds)) {
+                        if (provider.toLocaleLowerCase() == providerName.toLocaleLowerCase()) {
+                            providerId = show.ProviderIds[provider as any];
+                        }
+                    }
+                }
+
                 if (providerId !== undefined) {
                     if (shows[providerId] != undefined) {
                         shows[providerId].id += `,${show.Id}`;
