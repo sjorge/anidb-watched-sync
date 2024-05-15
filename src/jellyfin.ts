@@ -174,8 +174,18 @@ export class JellyfinMiniApi {
                             name: show.Name,
                             completed: (show.UserData.PlayedPercentage == 100),
                             providerIds: {
-                                anidb: show.ProviderIds.anidb ? parseInt(show.ProviderIds.anidb) : undefined,
-                                anilist: show.ProviderIds.anilist ? parseInt(show.ProviderIds.anilist) : undefined,
+                                anidb: (show.ProviderIds.AniDB != undefined) ?
+                                    parseInt(show.ProviderIds.AniDB) : (
+                                        (show.ProviderIds.anidb != undefined) ?
+                                        parseInt(show.ProviderIds.anidb) :
+                                        undefined
+                                    ),
+                                anilist: (show.ProviderIds.AniList != undefined) ?
+                                    parseInt(show.ProviderIds.AniList) : (
+                                        (show.ProviderIds.anilist != undefined) ?
+                                        parseInt(show.ProviderIds.anilist) :
+                                        undefined
+                                    ),
                             },
                         };
                     }
