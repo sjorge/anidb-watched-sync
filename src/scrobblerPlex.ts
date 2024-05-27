@@ -36,6 +36,7 @@ export class ScrobblerPlex {
             options: {
                 identifier: "c3afbfaf-1906-4750-8116-1fdcafdf1dbe",
                 product: "anidb-watched-sync",
+                deviceName: "AniDB Watched Sync",
                 version: "1.0.0",
             },
         });
